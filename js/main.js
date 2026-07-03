@@ -413,7 +413,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (headBgMobile || headBgDesktop) {
         function updateMobileHeadBg(event) {
-            const maxMove = 45;   // --- 陀螺儀最大位移距離 (像素) ---
+            const maxMove = 15;   // --- 陀螺儀最大單向位移距離 (像素)，往返總共 30px ---
             const gamma = event.gamma || 0;
             const beta = event.beta || 0;
             
