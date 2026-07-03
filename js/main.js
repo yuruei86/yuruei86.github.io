@@ -341,21 +341,79 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (headBgMobile) {
+    if (headBgMobile || headBgDesktop) {
         function updateMobileHeadBg(event) {
             const maxVw = 3;   // --- 陀螺儀位移距離 ---
             const gamma = event.gamma || 0;
             const beta = event.beta || 0;
+            
+            // 根據 gamma (-90 ~ 90) 和 beta (-180 ~ 180) 進行正規化
             const normalizedX = Math.max(-1, Math.min(1, gamma / 30));
-            const normalizedY = Math.max(-1, Math.min(1, beta / 30));
-            const moveX = -normalizedX * maxVw;
-            const moveY = -normalizedY * maxVw;
-            headBgMobile.style.transform = `translate(calc(-50% + ${moveX}vw), calc(-50% + ${moveY}vw))`;
+            const normalizedY = Math.max(-1, Math.min(1, (beta - 45) / 30)); // 假設手持角度約為 45 度為基準點
+
+            // 取得目前螢幕的旋轉方向 (0, 90, -90, 180)
+            const orientation = (screen.orientation && typeof screen.orientation.angle === 'number') 
+                ? screen.orientation.angle 
+                : (typeof window.orientation === 'number' ? window.orientation : 0);
+                
+            let moveX = 0;
+            let moveY = 0;
+
+            if (orientation === 90) {
+                // 橫向平板 (逆時針旋轉 90 度)
+                moveX = -normalizedY * maxVw;
+                moveY = normalizedX * maxVw;
+            } else if (orientation === -90 || orientation === 270) {
+                // 橫向平板 (順時針旋轉 90 度)
+                moveX = normalizedY * maxVw;
+                moveY = -normalizedX * maxVw;
+            } else if (orientation === 180) {
+                // 反向直向
+                moveX = normalizedX * maxVw;
+                moveY = normalizedY * maxVw;
+            } else {
+                // 一般直向
+                moveX = -normalizedX * maxVw;
+                moveY = -normalizedY * maxVw;
+            }
+
+            const transformValue = `translate(calc(-50% + ${moveX}vw), calc(-50% + ${moveY}vw))`;
+            
+            if (headBgMobile) headBgMobile.style.transform = transformValue;
+            if (headBgDesktop) headBgDesktop.style.transform = transformValue;
         }
 
-        window.addEventListener("deviceorientation", updateMobileHeadBg, true);
+        // 初始化陀螺儀監聽與 iOS 授權機制
+        function initDeviceOrientation() {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                // iOS 13+ 需要使用者點擊授權才能取得陀螺儀數據
+                const requestPermission = () => {
+                    DeviceOrientationEvent.requestPermission()
+                        .then(permissionState => {
+                            if (permissionState === 'granted') {
+                                window.addEventListener("deviceorientation", updateMobileHeadBg, true);
+                                // 授權成功後移除一次性點擊事件
+                                document.removeEventListener('click', requestPermission);
+                                document.removeEventListener('touchstart', requestPermission);
+                            }
+                        })
+                        .catch(console.error);
+                };
+                
+                // 當使用者首次觸碰或點擊螢幕任何地方時，觸發授權詢問
+                document.addEventListener('click', requestPermission, { once: true });
+                document.addEventListener('touchstart', requestPermission, { once: true });
+            } else {
+                // Android 或非 iOS 系統，直接監聽
+                window.addEventListener("deviceorientation", updateMobileHeadBg, true);
+            }
+        }
+
+        initDeviceOrientation();
+
         window.addEventListener("orientationchange", () => {
-            headBgMobile.style.transform = "translate(-50%, -50%)";
+            if (headBgMobile) headBgMobile.style.transform = "translate(-50%, -50%)";
+            if (headBgDesktop) headBgDesktop.style.transform = "translate(-50%, -50%)";
         });
     }
 });
