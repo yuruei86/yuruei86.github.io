@@ -295,7 +295,7 @@ body {
 }
 
 .tab-content-wrapper {
-    background-image: url('../images/itd_bg.png'); /* 已修正為 .png */
+    background-image: url('../images/itd_bg.webp'); /* 已轉換為 WebP */
     background-size: 100% auto;
     background-position: center top;
     background-repeat: no-repeat;
@@ -310,7 +310,7 @@ body {
 
 @media (max-width: 1023px) {
     .tab-content-wrapper {
-        background-image: url('../images/mb_itd_bg.png'); /* 已修正為 .png */
+        background-image: url('../images/mb_itd_bg.webp'); /* 已轉換為 WebP */
         background-size: 100% auto;
         background-position: center top;
         padding: 0px;

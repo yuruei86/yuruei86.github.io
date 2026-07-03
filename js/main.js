@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bnItems.forEach(item => {
         item.addEventListener("click", () => {
             const bnIndex = item.getAttribute("data-bn");
-            const isMobile = window.innerWidth <= 768;
+            const isMobile = window.innerWidth <= 1023;
             
             // 依據目前螢幕寬度判定載入的手機版或電腦版 Demo 圖片
             let targetImgPath = "";
@@ -50,6 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // 更新彈蓋圖片源並開啟
+            modalImg.loading = "lazy";
             modalImg.src = targetImgPath;
             modal.classList.add("open");
             document.body.style.overflow = "hidden"; // 彈出時禁止底層網頁滾動
