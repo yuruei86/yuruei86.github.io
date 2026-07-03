@@ -343,13 +343,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (headBgMobile || headBgDesktop) {
         function updateMobileHeadBg(event) {
-            const maxVw = 3;   // --- 陀螺儀位移距離 ---
+            const maxMove = 45;   // --- 陀螺儀最大位移距離 (像素) ---
             const gamma = event.gamma || 0;
             const beta = event.beta || 0;
             
-            // 根據 gamma (-90 ~ 90) 和 beta (-180 ~ 180) 進行正規化
-            const normalizedX = Math.max(-1, Math.min(1, gamma / 30));
-            const normalizedY = Math.max(-1, Math.min(1, (beta - 45) / 30)); // 假設手持角度約為 45 度為基準點
+            // 提高靈敏度：除以 15 (代表傾斜 15 度即達到最大位移值)，並以 45 度手持為基準
+            const normalizedX = Math.max(-1, Math.min(1, gamma / 15));
+            const normalizedY = Math.max(-1, Math.min(1, (beta - 45) / 15));
 
             // 取得目前螢幕的旋轉方向 (0, 90, -90, 180)
             const orientation = (screen.orientation && typeof screen.orientation.angle === 'number') 
@@ -361,23 +361,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (orientation === 90) {
                 // 橫向平板 (逆時針旋轉 90 度)
-                moveX = -normalizedY * maxVw;
-                moveY = normalizedX * maxVw;
+                moveX = -normalizedY * maxMove;
+                moveY = normalizedX * maxMove;
             } else if (orientation === -90 || orientation === 270) {
                 // 橫向平板 (順時針旋轉 90 度)
-                moveX = normalizedY * maxVw;
-                moveY = -normalizedX * maxVw;
+                moveX = normalizedY * maxMove;
+                moveY = -normalizedX * maxMove;
             } else if (orientation === 180) {
                 // 反向直向
-                moveX = normalizedX * maxVw;
-                moveY = normalizedY * maxVw;
+                moveX = normalizedX * maxMove;
+                moveY = normalizedY * maxMove;
             } else {
                 // 一般直向
-                moveX = -normalizedX * maxVw;
-                moveY = -normalizedY * maxVw;
+                moveX = -normalizedX * maxMove;
+                moveY = -normalizedY * maxMove;
             }
 
-            const transformValue = `translate(calc(-50% + ${moveX}vw), calc(-50% + ${moveY}vw))`;
+            const transformValue = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
             
             if (headBgMobile) headBgMobile.style.transform = transformValue;
             if (headBgDesktop) headBgDesktop.style.transform = transformValue;
@@ -392,17 +392,23 @@ document.addEventListener("DOMContentLoaded", () => {
                         .then(permissionState => {
                             if (permissionState === 'granted') {
                                 window.addEventListener("deviceorientation", updateMobileHeadBg, true);
-                                // 授權成功後移除一次性點擊事件
-                                document.removeEventListener('click', requestPermission);
-                                document.removeEventListener('touchstart', requestPermission);
                             }
+                            cleanupListeners();
                         })
-                        .catch(console.error);
+                        .catch(err => {
+                            console.error("Gyro permission error:", err);
+                            cleanupListeners();
+                        });
                 };
                 
-                // 當使用者首次觸碰或點擊螢幕任何地方時，觸發授權詢問
-                document.addEventListener('click', requestPermission, { once: true });
-                document.addEventListener('touchstart', requestPermission, { once: true });
+                const cleanupListeners = () => {
+                    document.removeEventListener('click', requestPermission);
+                    document.removeEventListener('touchend', requestPermission);
+                };
+                
+                // 綁定於安全的使用者互動事件 (click 與 touchend)，iOS Safari 不支援 touchstart 授權
+                document.addEventListener('click', requestPermission);
+                document.addEventListener('touchend', requestPermission);
             } else {
                 // Android 或非 iOS 系統，直接監聽
                 window.addEventListener("deviceorientation", updateMobileHeadBg, true);
