@@ -268,23 +268,92 @@ document.addEventListener("DOMContentLoaded", () => {
     const header = document.querySelector("header.header");
 
     if (headImg) {
-        const desktopHover = window.matchMedia("(min-width: 769px)");
+        const desktopHover = window.matchMedia("(min-width: 1024px)");
         const defaultHeadSrc = headImg.dataset.defaultSrc;
         const activeHeadSrc = headImg.dataset.activeSrc;
+        
+        let gifTimer = null;
+        let touchStartTime = 0;
+        let isLongPressing = false;
+        const gifDuration = 2000; // GIF 播放一次的估計時長 (毫秒)，可依需求自行微調
 
-        function setHeadImage(src) {
-            if (src) headImg.src = src;
+        function setHeadImage(src, isGif = false) {
+            if (!src) return;
+            if (isGif) {
+                // 加上時間戳記作為 query parameter，強制瀏覽器重新從第一格播放 GIF
+                headImg.src = `${src}?t=${Date.now()}`;
+            } else {
+                headImg.src = src;
+            }
+        }
+
+        function playGifOnce() {
+            if (gifTimer) clearTimeout(gifTimer);
+            setHeadImage(activeHeadSrc, true);
+            
+            gifTimer = setTimeout(() => {
+                if (!isLongPressing) {
+                    setHeadImage(defaultHeadSrc, false);
+                }
+            }, gifDuration);
         }
 
         function enableDesktopHover() {
-            headImg.addEventListener("mouseenter", () => setHeadImage(activeHeadSrc));
-            headImg.addEventListener("mouseleave", () => setHeadImage(defaultHeadSrc));
+            // 移除舊的監聽事件避免重複綁定 (若是切換尺寸時)
+            headImg.removeEventListener("mouseenter", handleMouseEnter);
+            headImg.removeEventListener("mouseleave", handleMouseLeave);
+            
+            headImg.addEventListener("mouseenter", handleMouseEnter);
+            headImg.addEventListener("mouseleave", handleMouseLeave);
+        }
+
+        function handleMouseEnter() {
+            if (gifTimer) clearTimeout(gifTimer);
+            setHeadImage(activeHeadSrc, true);
+        }
+
+        function handleMouseLeave() {
+            setHeadImage(defaultHeadSrc, false);
         }
 
         function enableMobilePress() {
-            headImg.addEventListener("touchstart", () => setHeadImage(activeHeadSrc));
-            headImg.addEventListener("touchend", () => setHeadImage(defaultHeadSrc));
-            headImg.addEventListener("touchcancel", () => setHeadImage(defaultHeadSrc));
+            headImg.removeEventListener("touchstart", handleTouchStart);
+            headImg.removeEventListener("touchend", handleTouchEnd);
+            headImg.removeEventListener("touchcancel", handleTouchCancel);
+            
+            headImg.addEventListener("touchstart", handleTouchStart, { passive: false });
+            headImg.addEventListener("touchend", handleTouchEnd, { passive: false });
+            headImg.addEventListener("touchcancel", handleTouchCancel, { passive: false });
+        }
+
+        function handleTouchStart(e) {
+            // 阻止預設長按彈出選單等行為
+            e.preventDefault();
+            touchStartTime = Date.now();
+            isLongPressing = true;
+            
+            if (gifTimer) clearTimeout(gifTimer);
+            setHeadImage(activeHeadSrc, true);
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            const touchDuration = Date.now() - touchStartTime;
+            isLongPressing = false;
+
+            if (touchDuration > 300) {
+                // 長按放開：立即恢復 PNG
+                setHeadImage(defaultHeadSrc, false);
+            } else {
+                // 短按：讓 GIF 播完一次後自動換回 PNG
+                playGifOnce();
+            }
+        }
+
+        function handleTouchCancel(e) {
+            isLongPressing = false;
+            if (gifTimer) clearTimeout(gifTimer);
+            setHeadImage(defaultHeadSrc, false);
         }
 
         if (desktopHover.matches) {
@@ -294,7 +363,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         desktopHover.addEventListener("change", (e) => {
-            setHeadImage(defaultHeadSrc);
+            setHeadImage(defaultHeadSrc, false);
+            if (gifTimer) clearTimeout(gifTimer);
             if (e.matches) {
                 enableDesktopHover();
             } else {
