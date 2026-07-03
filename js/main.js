@@ -343,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (headBgMobile) {
         function updateMobileHeadBg(event) {
-            const maxVw = 3;
+            const maxVw = 8;   // --- 陀螺儀位移距離 ---
             const gamma = event.gamma || 0;
             const beta = event.beta || 0;
             const normalizedX = Math.max(-1, Math.min(1, gamma / 30));
