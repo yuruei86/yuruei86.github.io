@@ -1,0 +1,361 @@
+document.addEventListener("DOMContentLoaded", () => {
+    
+    /* ==========================================
+       1. 橘色區塊 - Tab 頁籤切換邏輯 (含按鈕圖切換)
+       ========================================== */
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const tabPanels = document.querySelectorAll(".tab-panel");
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            // 移除所有按鈕的 active 狀態，並把圖片還原為不亮款 (itd_btn_X-1)
+            tabButtons.forEach(b => {
+                b.classList.remove("active");
+                const img = b.querySelector("img");
+                if (img) img.src = img.getAttribute("data-inactive");
+            });
+
+            // 隱藏所有面板
+            tabPanels.forEach(panel => panel.classList.remove("active"));
+
+            // 啟用當前按鈕
+            btn.classList.add("active");
+            const currentImg = btn.querySelector("img");
+            if (currentImg) currentImg.src = currentImg.getAttribute("data-active");
+
+            // 顯示相對應的面板
+            const targetTabId = btn.getAttribute("data-tab");
+            document.getElementById(targetTabId).classList.add("active");
+        });
+    });
+
+    /* ==========================================
+       2. 橫向 Banner 點擊 - RWD 彈跳視窗邏輯
+       ========================================== */
+    const bnItems = document.querySelectorAll(".bn-item");
+    const modal = document.getElementById("bnModal");
+    const modalImg = document.getElementById("modalImg");
+
+    bnItems.forEach(item => {
+        item.addEventListener("click", () => {
+            const bnIndex = item.getAttribute("data-bn");
+            const isMobile = window.innerWidth <= 768;
+            
+            // 依據目前螢幕寬度判定載入的手機版或電腦版 Demo 圖片
+            let targetImgPath = "";
+            if (isMobile) {
+                targetImgPath = `images/Bn-${bnIndex}_mb_Demo.jpg`;
+            } else {
+                targetImgPath = `images/Bn-${bnIndex}_pc_Demo.jpg`;
+            }
+
+            // 更新彈蓋圖片源並開啟
+            modalImg.src = targetImgPath;
+            modal.classList.add("open");
+            document.body.style.overflow = "hidden"; // 彈出時禁止底層網頁滾動
+        });
+    });
+
+    // 點擊彈跳視窗外部任意區域（非圖片本體）即關閉視窗
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal || e.target.classList.contains('modal-content')) {
+            modal.classList.remove("open");
+            document.body.style.overflow = ""; // 恢復網頁滾動
+            modalImg.src = ""; // 清空圖片源
+        }
+    });
+
+    /* ==========================================
+       3. Banner 自動輪播 & 拖曳邏輯
+       ========================================== */
+    const bannerSection = document.querySelector(".banner-grid-section");
+    const bannerItems = document.querySelectorAll(".bn-item");
+    let currentBannerIndex = 0;
+    let autoPlayInterval;
+    let autoPlayDelayTimeout; // 自動輪播延遲計時器
+    
+    // 拖曳相關變數
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartScrollLeft = 0;
+    let dragThreshold = 50; // 拖曳超過 50px 才會切換圖片
+
+    function slideToBanner(index) {
+        if (bannerSection && bannerItems.length > 0) {
+            // 確保 index 在有效範圍內
+            if (index >= bannerItems.length) {
+                currentBannerIndex = 0;
+            } else if (index < 0) {
+                currentBannerIndex = bannerItems.length - 1;
+            } else {
+                currentBannerIndex = index;
+            }
+
+            // 計算 scroll 位置
+            const itemWidth = bannerItems[0].offsetWidth;
+            const scrollLeft = currentBannerIndex * itemWidth;
+            
+            // 平滑滾動
+            bannerSection.scrollTo({
+                left: scrollLeft,
+                behavior: "smooth"
+            });
+        }
+    }
+
+    function startAutoPlay() {
+        autoPlayInterval = setInterval(() => {
+            slideToBanner(currentBannerIndex + 1);
+        }, 3000); // 每 3 秒切換一次
+    }
+
+    function stopAutoPlay() {
+        clearInterval(autoPlayInterval);
+    }
+
+    function resumeAutoPlayWithDelay() {
+        // 清除之前的延遲計時器
+        clearTimeout(autoPlayDelayTimeout);
+        // 設置 3 秒延遲後恢復自動輪播
+        autoPlayDelayTimeout = setTimeout(() => {
+            startAutoPlay();
+        }, 3000);
+    }
+
+    // 滑鼠拖曳事件
+    if (bannerSection && bannerItems.length > 0) {
+        bannerSection.addEventListener("mousedown", (e) => {
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartScrollLeft = bannerSection.scrollLeft;
+            stopAutoPlay();
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (!isDragging) return;
+            
+            const dragDistance = dragStartX - e.clientX;
+            bannerSection.scrollLeft = dragStartScrollLeft + dragDistance;
+        });
+
+        document.addEventListener("mouseup", () => {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            const dragDistance = dragStartX - event.clientX;
+            
+            // 根據拖曳距離決定滾動
+            if (Math.abs(dragDistance) > dragThreshold) {
+                if (dragDistance > 0) {
+                    // 向左拖曳 → 下一張
+                    slideToBanner(currentBannerIndex + 1);
+                } else {
+                    // 向右拖曳 → 上一張
+                    slideToBanner(currentBannerIndex - 1);
+                }
+            } else {
+                // 拖曳距離不足，回到當前圖片
+                slideToBanner(currentBannerIndex);
+            }
+            
+            // 拖曳完成後 3 秒才恢復自動輪播
+            resumeAutoPlayWithDelay();
+        });
+
+        // 觸控設備拖曳事件
+        bannerSection.addEventListener("touchstart", (e) => {
+            isDragging = true;
+            dragStartX = e.touches[0].clientX;
+            dragStartScrollLeft = bannerSection.scrollLeft;
+            stopAutoPlay();
+        });
+
+        document.addEventListener("touchmove", (e) => {
+            if (!isDragging) return;
+            
+            const dragDistance = dragStartX - e.touches[0].clientX;
+            bannerSection.scrollLeft = dragStartScrollLeft + dragDistance;
+        });
+
+        document.addEventListener("touchend", () => {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            const dragDistance = dragStartX - event.changedTouches[0].clientX;
+            
+            // 根據拖曳距離決定滾動
+            if (Math.abs(dragDistance) > dragThreshold) {
+                if (dragDistance > 0) {
+                    slideToBanner(currentBannerIndex + 1);
+                } else {
+                    slideToBanner(currentBannerIndex - 1);
+                }
+            } else {
+                slideToBanner(currentBannerIndex);
+            }
+            
+            resumeAutoPlayWithDelay();
+        });
+
+        // 滑鼠懸停時暫停輪播
+        bannerSection.addEventListener("mouseenter", stopAutoPlay);
+        // 滑鼠離開時繼續輪播
+        bannerSection.addEventListener("mouseleave", startAutoPlay);
+
+        // 初始化自動輪播
+        startAutoPlay();
+    }
+
+    /* ==========================================
+       4. 複製按鈕：hover 換圖 + click 複製文字
+       ========================================== */
+    const copyButtons = document.querySelectorAll(".copy-1, .copy-2");
+
+    function copyTextToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+        }
+
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+
+        const success = document.execCommand("copy");
+        document.body.removeChild(textarea);
+
+        if (!success) {
+            return Promise.reject(new Error("copy failed"));
+        }
+
+        return Promise.resolve();
+    }
+
+    copyButtons.forEach(btn => {
+        const defaultSrc = btn.dataset.defaultSrc;
+        const hoverSrc = btn.dataset.hoverSrc;
+        const copyText = btn.dataset.copy;
+
+        if (!copyText) return;
+
+        btn.addEventListener("mouseenter", () => {
+            if (hoverSrc) btn.src = hoverSrc;
+        });
+
+        btn.addEventListener("mouseleave", () => {
+            if (defaultSrc) btn.src = defaultSrc;
+        });
+
+        btn.addEventListener("click", () => {
+            copyTextToClipboard(copyText);
+        });
+
+        btn.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                copyTextToClipboard(copyText);
+            }
+        });
+    });
+
+    const headImg = document.querySelector(".img-head");
+    const headBgDesktop = document.querySelector(".head-bg.pc-only");
+    const headBgMobile = document.querySelector(".head-bg.mb-only");
+    const header = document.querySelector("header.header");
+
+    if (headImg) {
+        const desktopHover = window.matchMedia("(min-width: 769px)");
+        const defaultHeadSrc = headImg.dataset.defaultSrc;
+        const activeHeadSrc = headImg.dataset.activeSrc;
+
+        function setHeadImage(src) {
+            if (src) headImg.src = src;
+        }
+
+        function enableDesktopHover() {
+            headImg.addEventListener("mouseenter", () => setHeadImage(activeHeadSrc));
+            headImg.addEventListener("mouseleave", () => setHeadImage(defaultHeadSrc));
+        }
+
+        function enableMobilePress() {
+            headImg.addEventListener("touchstart", () => setHeadImage(activeHeadSrc));
+            headImg.addEventListener("touchend", () => setHeadImage(defaultHeadSrc));
+            headImg.addEventListener("touchcancel", () => setHeadImage(defaultHeadSrc));
+        }
+
+        if (desktopHover.matches) {
+            enableDesktopHover();
+        } else {
+            enableMobilePress();
+        }
+
+        desktopHover.addEventListener("change", (e) => {
+            setHeadImage(defaultHeadSrc);
+            if (e.matches) {
+                enableDesktopHover();
+            } else {
+                enableMobilePress();
+            }
+        });
+
+        let lastScrollY = window.scrollY;
+        let headScrollOffset = 0;
+        const maxHeadScrollOffset = 350;
+
+    window.addEventListener("scroll", () => {
+    const currentScrollY = window.scrollY;
+    const deltaY = currentScrollY - lastScrollY;
+    lastScrollY = currentScrollY;
+
+    // --- 修改這裡 ---
+    const slowFactor = 0.2; // 數值越小，移動越慢 (0 ~ 1 之間)
+    const easedDeltaY = deltaY * slowFactor;
+    
+    // 使用減速後的數值更新
+    headScrollOffset = Math.max(0, Math.min(maxHeadScrollOffset, headScrollOffset + easedDeltaY));
+    // ----------------
+    
+    headImg.style.setProperty("--head-scroll-offset", `${headScrollOffset}px`);
+}, { passive: true });
+    }
+
+    if (header && headBgDesktop) {
+        header.addEventListener("mousemove", (event) => {
+            const rect = header.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const offsetX = Math.max(-1, Math.min(1, (event.clientX - centerX) / (rect.width / 2)));
+            const offsetY = Math.max(-1, Math.min(1, (event.clientY - centerY) / (rect.height / 2)));
+            const maxMove = 20;
+            const moveX = -offsetX * maxMove;
+            const moveY = -offsetY * maxMove;
+            headBgDesktop.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
+        });
+
+        header.addEventListener("mouseleave", () => {
+            headBgDesktop.style.transform = "translate(-50%, -50%)";
+        });
+    }
+
+    if (headBgMobile) {
+        function updateMobileHeadBg(event) {
+            const maxVw = 3;
+            const gamma = event.gamma || 0;
+            const beta = event.beta || 0;
+            const normalizedX = Math.max(-1, Math.min(1, gamma / 30));
+            const normalizedY = Math.max(-1, Math.min(1, beta / 30));
+            const moveX = -normalizedX * maxVw;
+            const moveY = -normalizedY * maxVw;
+            headBgMobile.style.transform = `translate(calc(-50% + ${moveX}vw), calc(-50% + ${moveY}vw))`;
+        }
+
+        window.addEventListener("deviceorientation", updateMobileHeadBg, true);
+        window.addEventListener("orientationchange", () => {
+            headBgMobile.style.transform = "translate(-50%, -50%)";
+        });
+    }
+});

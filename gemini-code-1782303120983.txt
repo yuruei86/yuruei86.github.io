@@ -1,0 +1,22 @@
+你的專案資料夾/
+├── index.html
+├── css/
+│   └── style.css
+├── js/
+│   └── main.js
+└── images/
+    ├── pc_bg_0.jpg
+    ├── mb_bg_0.jpg
+    ├── head_portfolio.png
+    ├── head_head.png
+    ├── itd_bg.png
+    ├── mb_itd_bg.png
+    ├── itd_btn_A-1.png, itd_btn_A-2.png, itd_A-2.png
+    ├── itd_btn_B-1.png, itd_btn_B-2.png, itd_B-2.png
+    ├── itd_btn_C-1.png, itd_btn_C-2.png
+    ├── Bn-1.png, Bn-1_pc_Demo.jpg, Bn-1_mb_Demo.jpg
+    ├── Bn-2.png, Bn-2_pc_Demo.jpg, Bn-2_mb_Demo.jpg
+    ├── Bn-3.png, Bn-3_pc_Demo.jpg, Bn-3_mb_Demo.jpg
+    ├── STYLE.png
+    ├── Bnn.jpg (放12張或同一張重複使用)
+    └── more.png
