@@ -378,8 +378,7 @@ body {
     /* flex: 1;
     max-width: 350px; */
     position: absolute;
-     left: -12vw;
-    top: -3vw;
+
 
 }
 
@@ -411,8 +410,8 @@ body {
     /* flex: 1;
     max-width: 350px; */
     position: absolute;
-    left: 1159px;
-    top: 379px;
+    left: 1129px;
+    top: 340px;
     z-index: 4;
     width: 44px;
     animation: fadeInUp 0.8s ease-out 1s forwards, floatingX 3s  infinite;
@@ -434,8 +433,8 @@ body {
     /* flex: 1;
     max-width: 350px; */
     position: absolute;
-    left: 1324px;
-    top: 433px;
+    left: 1294px;
+    top: 393px;
     z-index: 4;
     width: 44px;
     animation: fadeInUp 0.8s ease-out 1s forwards, floatingX 3s  infinite;
@@ -606,17 +605,36 @@ body {
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    
+    /* 初始狀態：隱藏、下移、縮小、模糊 */
+    opacity: 0;
+    transform: translateY(50px) scale(0.96);
+    filter: blur(12px);
+    
+    /* 動態過渡效果與硬體加速 */
+    transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: var(--delay, 0ms);
+    will-change: transform, opacity, filter;
+}
+
+.masonry-item.show {
+    /* 顯示狀態：漸顯、對焦、歸位 */
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
 }
 
 .masonry-item img {
     width: 100%;
     height: auto;
     display: block;
-    transition: transform 0.3s;
+    transition: transform 0.4s ease;
 }
 
 .masonry-item:hover img {
-    transform: scale(1.03);
+    transform: scale(1.04);
 }
 
 @media (max-width: 1023px) {
@@ -631,11 +649,7 @@ body {
     width: 44%;
     text-align: center;
     padding: 40px 0;
-    margin-top: 208px;
-    position: relative;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    margin: 29px auto 0 auto;
 }
 
 @media (min-width: 1024px) and (max-width: 1366px) {
@@ -675,13 +689,13 @@ body {
         margin: 0 auto;
     }
     .copy-1 {
-        left: 71vw;
-        top: 22vw;
+        left: 59vw;
+        top: 19vw;
         width: 3vw;
     }
     .copy-2 {
         left: 79vw;
-        top: 25vw;
+        top: 22vw;
         width: 3vw;
     }
     .panel-text-box {
@@ -715,8 +729,6 @@ body {
         width: 82%;
         margin: 0vw auto 0;
         padding: 2vw 0;
-        left: auto;
-        transform: none;
     }
 }
 
@@ -724,12 +736,8 @@ body {
     .footer {
         width: 94%;
         text-align: center;
-        padding: 40px 0;
-        margin-top: 17vw;
-        position: relative;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
+        padding: 0vw 0 9vw 0; /* 縮小上下內距，消除底部多餘空間 */
+        margin: 0vw auto 0vw auto; /* 縮短與上方區塊的間距 */
     }
 }
 
@@ -774,4 +782,71 @@ body {
     max-width: 100%;
     height: auto;
     margin: 0 auto;
+}
+
+/* ==========================================
+   開頭過場動畫 (Intro Screen)
+   ========================================== */
+.intro-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #ed653f;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100000; /* 確保在最頂層，覆蓋所有內容 */
+    opacity: 1;
+    transition: opacity 0.6s ease-in-out;
+    pointer-events: auto;
+}
+
+/* 淡出樣式 */
+.intro-overlay.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.intro-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px; /* GIF 與進度條的間隔 */
+}
+
+.intro-gif {
+    width: 200px; /* 電腦版大小 */
+    height: auto;
+    display: block;
+}
+
+/* 進度條容器 */
+.progress-bar-container {
+    width: 200px;
+    height: 5px;
+    background-color: rgba(255, 255, 255, 0.25);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 進度條本體 */
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background-color: #ffffff;
+    border-radius: 3px;
+    transition: width 2.4s linear; /* 與 JS 設定的等待時間同步 */
+}
+
+/* 行動裝置適應 */
+@media (max-width: 1023px) {
+    .intro-gif {
+        width: 160px; /* 手機版略為縮小 */
+    }
+    .progress-bar-container {
+        width: 160px;
+    }
 }

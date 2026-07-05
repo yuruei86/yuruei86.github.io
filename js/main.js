@@ -1,6 +1,41 @@
 document.addEventListener("DOMContentLoaded", () => {
     
     /* ==========================================
+       0. 開頭過場動畫控制邏輯
+       ========================================== */
+    const introOverlay = document.getElementById("introOverlay");
+    const introGif = document.getElementById("introGif");
+    const introProgressBar = document.getElementById("introProgressBar");
+    
+    // 定義過場動畫播放時長 (毫秒)
+    const INTRO_DURATION = 2400; 
+
+    if (introOverlay && introGif && introProgressBar) {
+        // 1. 鎖定網頁滾動，防止使用者在過場期間滑動
+        document.body.style.overflow = "hidden";
+
+        // 2. 加上時間戳記強制重播 GIF，確保每次載入均從第一格影格開始播放
+        const originalSrc = introGif.getAttribute("src");
+        introGif.src = `${originalSrc}?t=${Date.now()}`;
+
+        // 3. 啟動進度條動畫 (延遲 50ms 確保瀏覽器已完成初始渲染)
+        setTimeout(() => {
+            introProgressBar.style.width = "100%";
+        }, 50);
+
+        // 4. 當動畫播完後淡出遮罩並解鎖滾動
+        setTimeout(() => {
+            introOverlay.classList.add("fade-out");
+            
+            // 等待淡出 CSS 轉場 (0.6s) 結束後釋放滾動條，並移除節點節省記憶體
+            setTimeout(() => {
+                document.body.style.overflow = "";
+                introOverlay.remove();
+            }, 600);
+        }, INTRO_DURATION);
+    }
+
+    /* ==========================================
        1. 橘色區塊 - Tab 頁籤切換邏輯 (含按鈕圖切換)
        ========================================== */
     const tabButtons = document.querySelectorAll(".tab-btn");
@@ -269,13 +304,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const header = document.querySelector("header.header");
 
     if (headImg) {
-        const desktopHover = window.matchMedia("(min-width: 1024px)");
+        const desktopHover = window.matchMedia("(min-width: 1367px)");
         const defaultHeadSrc = headImg.dataset.defaultSrc;
         const activeHeadSrc = headImg.dataset.activeSrc;
         
         let gifTimer = null;
-        let touchStartTime = 0;
-        let isLongPressing = false;
         const gifDuration = 2000; // GIF 播放一次的估計時長 (毫秒)，可依需求自行微調
 
         function setHeadImage(src, isGif = false) {
@@ -289,17 +322,25 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         function playGifOnce() {
-            if (gifTimer) clearTimeout(gifTimer);
-            setHeadImage(activeHeadSrc, true);
-            
-            gifTimer = setTimeout(() => {
-                if (!isLongPressing) {
+            if (gifTimer) {
+                // 若正在播放中，點擊第二次則中斷播放並變回靜態圖
+                clearTimeout(gifTimer);
+                gifTimer = null;
+                setHeadImage(defaultHeadSrc, false);
+            } else {
+                // 初次點擊，播放 GIF
+                setHeadImage(activeHeadSrc, true);
+                gifTimer = setTimeout(() => {
                     setHeadImage(defaultHeadSrc, false);
-                }
-            }, gifDuration);
+                    gifTimer = null; // 播放完畢，重設狀態
+                }, gifDuration);
+            }
         }
 
         function enableDesktopHover() {
+            // 移除行動裝置的點擊監聽器
+            headImg.removeEventListener("click", handleMobileClick);
+
             // 移除舊的監聽事件避免重複綁定 (若是切換尺寸時)
             headImg.removeEventListener("mouseenter", handleMouseEnter);
             headImg.removeEventListener("mouseleave", handleMouseLeave);
@@ -309,52 +350,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         function handleMouseEnter() {
-            if (gifTimer) clearTimeout(gifTimer);
+            if (gifTimer) {
+                clearTimeout(gifTimer);
+                gifTimer = null;
+            }
             setHeadImage(activeHeadSrc, true);
         }
 
         function handleMouseLeave() {
+            if (gifTimer) {
+                clearTimeout(gifTimer);
+                gifTimer = null;
+            }
             setHeadImage(defaultHeadSrc, false);
         }
 
         function enableMobilePress() {
-            headImg.removeEventListener("touchstart", handleTouchStart);
-            headImg.removeEventListener("touchend", handleTouchEnd);
-            headImg.removeEventListener("touchcancel", handleTouchCancel);
-            
-            headImg.addEventListener("touchstart", handleTouchStart, { passive: false });
-            headImg.addEventListener("touchend", handleTouchEnd, { passive: false });
-            headImg.addEventListener("touchcancel", handleTouchCancel, { passive: false });
+            // 確保移除舊的事件，防重複綁定
+            headImg.removeEventListener("click", handleMobileClick);
+            // 行動裝置改用點擊事件觸發
+            headImg.addEventListener("click", handleMobileClick);
         }
 
-        function handleTouchStart(e) {
-            // 阻止預設長按彈出選單等行為
-            e.preventDefault();
-            touchStartTime = Date.now();
-            isLongPressing = true;
-            
-            if (gifTimer) clearTimeout(gifTimer);
-            setHeadImage(activeHeadSrc, true);
-        }
-
-        function handleTouchEnd(e) {
-            e.preventDefault();
-            const touchDuration = Date.now() - touchStartTime;
-            isLongPressing = false;
-
-            if (touchDuration > 300) {
-                // 長按放開：立即恢復 PNG
-                setHeadImage(defaultHeadSrc, false);
-            } else {
-                // 短按：讓 GIF 播完一次後自動換回 PNG
-                playGifOnce();
-            }
-        }
-
-        function handleTouchCancel(e) {
-            isLongPressing = false;
-            if (gifTimer) clearTimeout(gifTimer);
-            setHeadImage(defaultHeadSrc, false);
+        function handleMobileClick() {
+            playGifOnce();
         }
 
         if (desktopHover.matches) {
@@ -491,6 +510,39 @@ document.addEventListener("DOMContentLoaded", () => {
         window.addEventListener("orientationchange", () => {
             if (headBgMobile) headBgMobile.style.transform = "translate(-50%, -50%)";
             if (headBgDesktop) headBgDesktop.style.transform = "translate(-50%, -50%)";
+        });
+    }
+
+    /* ==========================================
+       5. 瀑布流卡片滾動進場動畫 (Intersection Observer)
+       ========================================== */
+    const masonryItems = document.querySelectorAll(".masonry-item");
+
+    if (masonryItems.length > 0) {
+        const observerOptions = {
+            root: null, // 以 viewport 為基準
+            rootMargin: "0px 0px -80px 0px", // 卡片露出底緣 80px 時觸發，體驗更精緻
+            threshold: 0.05 // 露出 5% 開始進行轉場
+        };
+
+        const masonryObserver = new IntersectionObserver((entries, observer) => {
+            // 獲取當前進入視窗的卡片
+            const intersectingEntries = entries.filter(entry => entry.isIntersecting);
+            
+            intersectingEntries.forEach((entry, index) => {
+                const item = entry.target;
+                
+                // 為同時進入視窗的卡片計算交錯延遲 (Stagger Delay)，間隔 100ms
+                item.style.setProperty("--delay", `${index * 100}ms`);
+                item.classList.add("show");
+                
+                // 載入完成後停止監聽此卡片，避免重複觸發，確保流暢度
+                observer.unobserve(item);
+            });
+        }, observerOptions);
+
+        masonryItems.forEach(item => {
+            masonryObserver.observe(item);
         });
     }
 });
