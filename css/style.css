@@ -228,10 +228,10 @@ body {
 
 /* Tab 頁籤系統 */
 .info-tab-section {
-    /* max-width: 2000px; */
+    --tab-w: min(100vw, 2000px);
     margin: 0px auto;
     padding: 0 0px;
-    width: 2000px;
+    width: var(--tab-w);
     position: relative;
 }
 
@@ -247,12 +247,12 @@ body {
 .tab-buttons {
     display: flex;
     justify-content: center;
-    gap: 15px;
+    gap: calc(var(--tab-w) * 0.0075);
     margin-bottom: -2px;
     position: absolute;
     z-index: 2;
     left: 50%;
-    top: 313px;
+    top: calc(var(--tab-w) * 0.1565);
     transform: translate(-50%, -50%);
 
 }
@@ -281,7 +281,7 @@ body {
     padding: 0;
     outline: none;
     transition: transform 0.2s;
-    width: 180px;
+    width: calc(var(--tab-w) * 0.09);
 }
 
 .tab-btn:hover {
@@ -300,9 +300,9 @@ body {
     background-position: center top;
     background-repeat: no-repeat;
     border-radius: 0px;
-    padding: 40px;
+    padding: 0px;
     width: 100%;
-    height: 1311px;
+    height: calc(var(--tab-w) * 0.6555);
     /* box-shadow: 0 10px 30px rgba(0,0,0,0.15); */
 }
 
@@ -356,9 +356,9 @@ body {
     max-width: 350px; */
     position: absolute;
      left: 50%;
-    top: 711px;
+    top: calc(var(--tab-w) * 0.3555);
     transform: translate(-50%, -50%);
-    width: 2000px;
+    width: var(--tab-w);
 }
 
 @media (max-width: 1023px) {
@@ -410,10 +410,10 @@ body {
     /* flex: 1;
     max-width: 350px; */
     position: absolute;
-    left: 1129px;
-    top: 340px;
+    left: calc(var(--tab-w) * 0.5845);
+    top: calc(var(--tab-w) * 0.19);
     z-index: 4;
-    width: 44px;
+    width: calc(var(--tab-w) * 0.022);
     animation: fadeInUp 0.8s ease-out 1s forwards, floatingX 3s  infinite;
 }
 
@@ -433,10 +433,10 @@ body {
     /* flex: 1;
     max-width: 350px; */
     position: absolute;
-    left: 1294px;
-    top: 393px;
+    left: calc(var(--tab-w) * 0.668);
+    top: calc(var(--tab-w) * 0.215);
     z-index: 4;
-    width: 44px;
+    width: calc(var(--tab-w) * 0.022);
     animation: fadeInUp 0.8s ease-out 1s forwards, floatingX 3s  infinite;
 }
 
@@ -653,55 +653,6 @@ body {
 }
 
 @media (min-width: 1024px) and (max-width: 1366px) {
-    .info-tab-section {
-        width: 100%;
-        max-width: 100%;
-        margin: 0 auto;
-    }
-    .tab-buttons {
-        top: 15vw;
-        width: 46vw;
-        left: 50%;
-    }
-    .tab-btn {
-        width: 100%;
-    }
-    .tab-content-wrapper {
-        padding: 0vw;
-        height: 67vw;
-        width: 100%;
-        /* max-width: 100%; */
-        margin: 0 auto;
-        position: relative;
-        top: 0vw;
-        left: 0;
-    }
-    .panel-img-box {
-        top: 36vw;
-        width: 100%;
-        /* max-width: 100%; */
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-    .copy_btn {
-        width: 100%;
-        max-width: 100%;
-        margin: 0 auto;
-    }
-    .copy-1 {
-        left: 59vw;
-        top: 19vw;
-        width: 3vw;
-    }
-    .copy-2 {
-        left: 79vw;
-        top: 22vw;
-        width: 3vw;
-    }
-    .panel-text-box {
-        margin: 327px 150px 11px 648px;
-        font-size: 21px;
-    }
     .bn-item {
         width: 46%;
     }
